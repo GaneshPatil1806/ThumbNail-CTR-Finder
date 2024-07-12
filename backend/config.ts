@@ -1,3 +1,2 @@
-export default {
-    JWT_SECRET:"HellDostoMeraName"
-}
+export const JWT_SECRET = "HellDostoMeraNaamHaiNobita";
+

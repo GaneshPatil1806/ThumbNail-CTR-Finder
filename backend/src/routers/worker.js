@@ -1,6 +1,8 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 // // import nacl from "tweetnacl";
 // import { PrismaClient } from "@prisma/client";
-import { Router } from "express";
+const express_1 = require("express");
 // import jwt from "jsonwebtoken";
 // // import { workerMiddleware } from "../middleware";
 // // import { TOTAL_DECIMALS, WORKER_JWT_SECRET } from "../config";
@@ -9,12 +11,9 @@ import { Router } from "express";
 // // import { Connection, Keypair, PublicKey, SystemProgram, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
 // // import { privateKey } from "../privateKey";
 // // import { decode } from "bs58";
-
 // // const connection = new Connection(process.env.RPC_URL ?? "");
-
 // const TOTAL_SUBMISSIONS = 100;
 // const prismaClient = new PrismaClient();
-
 // prismaClient.$transaction(
 //     async (prisma) => {
 //       // Code running in a transaction...
@@ -24,22 +23,18 @@ import { Router } from "express";
 //       timeout: 10000, // default: 5000
 //     }
 // )
-
-const router = Router();
-
+const router = (0, express_1.Router)();
 // router.post("/payout", workerMiddleware, async (req, res) => {
 //     // @ts-ignore
 //     const userId: string = req.userId;
 //     const worker = await prismaClient.worker.findFirst({
 //         where: { id: Number(userId) }
 //     })
-
 //     if (!worker) {
 //         return res.status(403).json({
 //             message: "User not found"
 //         })
 //     }
-
 //     const transaction = new Transaction().add(
 //         SystemProgram.transfer({
 //             fromPubkey: new PublicKey("2KeovpYvrgpziaDsq8nbNMP4mc48VNBVXb5arbqrg9Cq"),
@@ -47,12 +42,8 @@ const router = Router();
 //             lamports: 1000_000_000 * worker.pending_amount / TOTAL_DECIMALS,
 //         })
 //     );
-
-
 //     console.log(worker.address);
-
 //     const keypair = Keypair.fromSecretKey(decode(privateKey));
-
 //     // TODO: There's a double spending problem here
 //     // The user can request the withdrawal multiple times
 //     // Can u figure out a way to fix it?
@@ -63,15 +54,12 @@ const router = Router();
 //             transaction,
 //             [keypair],
 //         );
-    
 //      } catch(e) {
 //         return res.json({
 //             message: "Transaction failed"
 //         })
 //      }
-    
 //     console.log(signature)
-
 //     // We should add a lock here
 //     await prismaClient.$transaction(async tx => {
 //         await tx.worker.update({
@@ -87,7 +75,6 @@ const router = Router();
 //                 }
 //             }
 //         })
-
 //         await tx.payouts.create({
 //             data: {
 //                 user_id: Number(userId),
@@ -97,38 +84,29 @@ const router = Router();
 //             }
 //         })
 //     })
-
 //     res.json({
 //         message: "Processing payout",
 //         amount: worker.pending_amount
 //     })
-
-
 // })
-
 // router.get("/balance", workerMiddleware, async (req, res) => {
 //     // @ts-ignore
 //     const userId: string = req.userId;
-
 //     const worker = await prismaClient.worker.findFirst({
 //         where: {
 //             id: Number(userId)
 //         }
 //     })
-
 //     res.json({
 //         pendingAmount: worker?.pending_amount,
 //         lockedAmount: worker?.pending_amount,
 //     })
 // })
-
-
 // router.post("/submission", workerMiddleware, async (req, res) => {
 //     // @ts-ignore
 //     const userId = req.userId;
 //     const body = req.body;
 //     const parsedBody = createSubmissionInput.safeParse(body);
-
 //     if (parsedBody.success) {
 //         const task = await getNextTask(Number(userId));
 //         if (!task || task?.id !== Number(parsedBody.data.taskId)) {
@@ -136,9 +114,7 @@ const router = Router();
 //                 message: "Incorrect task id"
 //             })
 //         }
-
 //         const amount = (Number(task.amount) / TOTAL_SUBMISSIONS).toString();
-
 //         const submission = await prismaClient.$transaction(async tx => {
 //             const submission = await tx.submission.create({
 //                 data: {
@@ -148,7 +124,6 @@ const router = Router();
 //                     amount: Number(amount)
 //                 }
 //             })
-
 //             await tx.worker.update({
 //                 where: {
 //                     id: userId,
@@ -159,32 +134,23 @@ const router = Router();
 //                     }
 //                 }
 //             })
-
 //             return submission;
 //         })
-
 //         const nextTask = await getNextTask(Number(userId));
 //         res.json({
 //             nextTask,
 //             amount
 //         })
-        
-
 //     } else {
 //         res.status(411).json({
 //             message: "Incorrect inputs"
 //         })
-            
 //     }
-
 // })
-
 // router.get("/nextTask", workerMiddleware, async (req, res) => {
 //     // @ts-ignore
 //     const userId: string = req.userId;
-
 //     const task = await getNextTask(Number(userId));
-
 //     if (!task) {
 //         res.status(411).json({   
 //             message: "No more tasks left for you to review"
@@ -195,34 +161,28 @@ const router = Router();
 //         })
 //     }
 // })
-
 // router.post("/signin", async(req, res) => {
 //     const { publicKey, signature } = req.body;
 //     const message = new TextEncoder().encode("Sign into mechanical turks as a worker");
-
 //     const result = nacl.sign.detached.verify(
 //         message,
 //         new Uint8Array(signature.data),
 //         new PublicKey(publicKey).toBytes(),
 //     );
-
 //     if (!result) {
 //         return res.status(411).json({
 //             message: "Incorrect signature"
 //         })
 //     }
-
 //     const existingUser = await prismaClient.worker.findFirst({
 //         where: {
 //             address: publicKey
 //         }
 //     })
-
 //     if (existingUser) {
 //         const token = jwt.sign({
 //             userId: existingUser.id
 //         }, WORKER_JWT_SECRET)
-
 //         res.json({
 //             token,
 //             amount: existingUser.pending_amount / TOTAL_DECIMALS
@@ -235,16 +195,13 @@ const router = Router();
 //                 locked_amount: 0
 //             }
 //         });
-
 //         const token = jwt.sign({
 //             userId: user.id
 //         }, WORKER_JWT_SECRET)
-
 //         res.json({
 //             token,
 //             amount: 0
 //         })
 //     }
 // });
-
-export default router;
+exports.default = router;
