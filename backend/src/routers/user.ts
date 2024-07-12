@@ -4,15 +4,16 @@ import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../../config";
 import { authMiddleware } from "../middleware";
-import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
-// import { createTaskInput } from "../types";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
+import { createTaskInput } from "../types";
 // import { Connection, PublicKey, Transaction } from "@solana/web3.js";
 // import nacl from "tweetnacl";
 
 // const connection = new Connection(process.env.RPC_URL ?? "");
 
 // const PARENT_WALLET_ADDRESS = "2KeovpYvrgpziaDsq8nbNMP4mc48VNBVXb5arbqrg9Cq";
-    
+
 const DEFAULT_TITLE = "Select the most clickable thumbnail";
 
 const s3Client = new S3Client({
@@ -97,104 +98,123 @@ const prismaClient = new PrismaClient();
 
 // })
 
-// router.post("/task", authMiddleware, async (req, res) => {
-//     //@ts-ignore
-//     const userId = req.userId
-//     // validate the inputs from the user;
-//     const body = req.body;
+router.post("/task", authMiddleware, async (req, res) => {
+    //@ts-ignore
+    const userId = req.userId
+    // validate the inputs from the user;
+    const body = req.body;
 
-//     const parseData = createTaskInput.safeParse(body);
+    const parseData = createTaskInput.safeParse(body);
 
-//     const user = await prismaClient.user.findFirst({
-//         where: {
-//             id: userId
-//         }
-//     })
+    const user = await prismaClient.user.findFirst({
+        where: {
+            id: userId
+        }
+    })
 
-//     if (!parseData.success) {
-//         return res.status(411).json({
-//             message: "You've sent the wrong inputs"
-//         })
-//     }
+    if (!parseData.success) {
+        return res.status(411).json({
+            message: "You've sent the wrong inputs"
+        })
+    }
 
-//     const transaction = await connection.getTransaction(parseData.data.signature, {
-//         maxSupportedTransactionVersion: 1
-//     });
+    const transaction = await connection.getTransaction(parseData.data.signature, {
+        maxSupportedTransactionVersion: 1
+    });
 
-//     console.log(transaction);
+    console.log(transaction);
 
-//     if ((transaction?.meta?.postBalances[1] ?? 0) - (transaction?.meta?.preBalances[1] ?? 0) !== 100000000) {
-//         return res.status(411).json({
-//             message: "Transaction signature/amount incorrect"
-//         })
-//     }
+    if ((transaction?.meta?.postBalances[1] ?? 0) - (transaction?.meta?.preBalances[1] ?? 0) !== 100000000) {
+        return res.status(411).json({
+            message: "Transaction signature/amount incorrect"
+        })
+    }
 
-//     if (transaction?.transaction.message.getAccountKeys().get(1)?.toString() !== PARENT_WALLET_ADDRESS) {
-//         return res.status(411).json({
-//             message: "Transaction sent to wrong address"
-//         })
-//     }
+    if (transaction?.transaction.message.getAccountKeys().get(1)?.toString() !== PARENT_WALLET_ADDRESS) {
+        return res.status(411).json({
+            message: "Transaction sent to wrong address"
+        })
+    }
 
-//     if (transaction?.transaction.message.getAccountKeys().get(0)?.toString() !== user?.address) {
-//         return res.status(411).json({
-//             message: "Transaction sent to wrong address"
-//         })
-//     }
-//     // was this money paid by this user address or a different address?
+    if (transaction?.transaction.message.getAccountKeys().get(0)?.toString() !== user?.address) {
+        return res.status(411).json({
+            message: "Transaction sent to wrong address"
+        })
+    }
+    // was this money paid by this user address or a different address?
 
-//     // parse the signature here to ensure the person has paid 0.1 SOL
-//     // const transaction = Transaction.from(parseData.data.signature);
+    // parse the signature here to ensure the person has paid 0.1 SOL
+    // const transaction = Transaction.from(parseData.data.signature);
 
-//     let response = await prismaClient.$transaction(async tx => {
+    let response = await prismaClient.$transaction(async tx => {
 
-//         const response = await tx.task.create({
-//             data: {
-//                 title: parseData.data.title ?? DEFAULT_TITLE,
-//                 amount: 0.1 * TOTAL_DECIMALS,
-//                 //TODO: Signature should be unique in the table else people can reuse a signature
-//                 signature: parseData.data.signature,
-//                 user_id: userId
-//             }
-//         });
+        const response = await tx.task.create({
+            data: {
+                title: parseData.data.title ?? DEFAULT_TITLE,
+                amount: 0.1 * TOTAL_DECIMALS,
+                //TODO: Signature should be unique in the table else people can reuse a signature
+                signature: parseData.data.signature,
+                user_id: userId
+            }
+        });
 
-//         await tx.option.createMany({
-//             data: parseData.data.options.map(x => ({
-//                 image_url: x.imageUrl,
-//                 task_id: response.id
-//             }))
-//         })
+        await tx.option.createMany({
+            data: parseData.data.options.map(x => ({
+                image_url: x.imageUrl,
+                task_id: response.id
+            }))
+        })
 
-//         return response;
+        return response;
 
-//     })
+    })
 
-//     res.json({
-//         id: response.id
-//     })
+    res.json({
+        id: response.id
+    })
 
-// })
+})
 
 router.get("/presignedUrl", authMiddleware, async (req, res) => {
     // @ts-ignore
     const userId = req.userId;
 
     const { url, fields } = await createPresignedPost(s3Client, {
-        Bucket: 'hkirat-cms',
-        Key: `fiver/${userId}/${Math.random()}/image.jpg`,
+        Bucket: 'project2-thumbneilctr',
+        Key: `fiver/${userId}/${Math.random()}/image.png`,
         Conditions: [
-          ['content-length-range', 0, 5 * 1024 * 1024] // 5 MB max
+            ['content-length-range', 0, 5 * 1024 * 1024] // 5 MB max
         ],
+        Fields: {
+            'Content-Type': 'image/png'
+        },
         Expires: 3600
     })
+
+    // const command = new PutObjectCommand({
+    //     Bucket: 'project2-thumbneilctr',
+    //     Key: `fiver/${userId}/${Math.random()}/image.jpg`,
+    //     ContentType: "img/jpg"
+    // })
+
+    // const preSignedUrl = await getSignedUrl(s3Client,command,{
+    //     expiresIn: 3600
+    // })
+
+    // res.json({
+    //     preSignedUrl
+    // })
+
+   // console.log({ url, fields })
 
     res.json({
         preSignedUrl: url,
         fields
     })
-    
+
 })
 
-router.post("/signin", async(req, res) => {
+router.post("/signin", async (req, res) => {
     // const { publicKey, signature } = req.body;
     // const message = new TextEncoder().encode("Sign into mechanical turks");
 
@@ -211,7 +231,7 @@ router.post("/signin", async(req, res) => {
     //     })
     // }
 
-    const publicKey="0x95fa625399153E4B28C43c6f0cdE76568A2bDDb9"
+    const publicKey = "0x95fa625399153E4B28C43c6f0cdE76568A2bDDb9"
 
     const existingUser = await prismaClient.user.findFirst({
         where: {

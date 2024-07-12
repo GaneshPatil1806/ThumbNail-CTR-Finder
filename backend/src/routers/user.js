@@ -11,27 +11,28 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var _a, _b;
 Object.defineProperty(exports, "__esModule", { value: true });
-// import nacl from "tweetnacl";
 const client_1 = require("@prisma/client");
 const express_1 = require("express");
-// import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
+const client_s3_1 = require("@aws-sdk/client-s3");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const config_1 = require("../../config");
-// import { authMiddleware } from "../middleware";
-// import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
+const middleware_1 = require("../middleware");
+const s3_presigned_post_1 = require("@aws-sdk/s3-presigned-post");
 // import { createTaskInput } from "../types";
 // import { Connection, PublicKey, Transaction } from "@solana/web3.js";
+// import nacl from "tweetnacl";
 // const connection = new Connection(process.env.RPC_URL ?? "");
-const PARENT_WALLET_ADDRESS = "2KeovpYvrgpziaDsq8nbNMP4mc48VNBVXb5arbqrg9Cq";
+// const PARENT_WALLET_ADDRESS = "2KeovpYvrgpziaDsq8nbNMP4mc48VNBVXb5arbqrg9Cq";
 const DEFAULT_TITLE = "Select the most clickable thumbnail";
-// const s3Client = new S3Client({
-//     credentials: {
-//         accessKeyId: process.env.ACCESS_KEY_ID ?? "",
-//         secretAccessKey: process.env.ACCESS_SECRET ?? "",
-//     },
-//     region: "us-east-1"
-// })
+const s3Client = new client_s3_1.S3Client({
+    credentials: {
+        accessKeyId: (_a = process.env.ACCESS_KEY_ID) !== null && _a !== void 0 ? _a : "",
+        secretAccessKey: (_b = process.env.ACCESS_SECRET) !== null && _b !== void 0 ? _b : "",
+    },
+    region: "eu-north-1"
+});
 const router = (0, express_1.Router)();
 const prismaClient = new client_1.PrismaClient();
 // prismaClient.$transaction(
@@ -153,22 +154,34 @@ const prismaClient = new client_1.PrismaClient();
 //         id: response.id
 //     })
 // })
-// router.get("/presignedUrl", authMiddleware, async (req, res) => {
-//     // @ts-ignore
-//     const userId = req.userId;
-//     const { url, fields } = await createPresignedPost(s3Client, {
-//         Bucket: 'hkirat-cms',
-//         Key: `fiver/${userId}/${Math.random()}/image.jpg`,
-//         Conditions: [
-//           ['content-length-range', 0, 5 * 1024 * 1024] // 5 MB max
-//         ],
-//         Expires: 3600
-//     })
-//     res.json({
-//         preSignedUrl: url,
-//         fields
-//     })
-// })
+router.get("/presignedUrl", middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    // @ts-ignore
+    const userId = req.userId;
+    const { url, fields } = yield (0, s3_presigned_post_1.createPresignedPost)(s3Client, {
+        Bucket: 'project2-thumbneilctr',
+        Key: `fiver/${userId}/${Math.random()}/image.jpg`,
+        Conditions: [
+            ['content-length-range', 0, 5 * 1024 * 1024] // 5 MB max
+        ],
+        Expires: 3600
+    });
+    // const command = new PutObjectCommand({
+    //     Bucket: 'project2-thumbneilctr',
+    //     Key: `fiver/${userId}/${Math.random()}/image.jpg`,
+    //     ContentType: "img/jpg"
+    // })
+    // const preSignedUrl = await getSignedUrl(s3Client,command,{
+    //     expiresIn: 3600
+    // })
+    // res.json({
+    //     preSignedUrl
+    // })
+    console.log({ url, fields });
+    res.json({
+        preSignedUrl: url,
+        fields
+    });
+}));
 router.post("/signin", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     // const { publicKey, signature } = req.body;
     // const message = new TextEncoder().encode("Sign into mechanical turks");
