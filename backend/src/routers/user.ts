@@ -39,120 +39,86 @@ const prismaClient = new PrismaClient();
 //     }
 // )
 
-// router.get("/task", authMiddleware, async (req, res) => {
-//     // @ts-ignore
-//     const taskId: string = req.query.taskId;
-//     // @ts-ignore
-//     const userId: string = req.userId;
+router.get("/task", authMiddleware, async (req, res) => {
+    // @ts-ignore
+    const taskId: string = req.query.taskId;
+    // @ts-ignore
+    const userId: string = req.userId;
 
-//     const taskDetails = await prismaClient.task.findFirst({
-//         where: {
-//             user_id: Number(userId),
-//             id: Number(taskId)
-//         },
-//         include: {
-//             options: true
-//         }
-//     })
-
-//     if (!taskDetails) {
-//         return res.status(411).json({
-//             message: "You dont have access to this task"
-//         })
-//     }
-
-//     // Todo: Can u make this faster?
-//     const responses = await prismaClient.submission.findMany({
-//         where: {
-//             task_id: Number(taskId)
-//         },
-//         include: {
-//             option: true
-//         }
-//     });
-
-//     const result: Record<string, {
-//         count: number;
-//         option: {
-//             imageUrl: string
-//         }
-//     }> = {};
-
-//     taskDetails.options.forEach(option => {
-//         result[option.id] = {
-//             count: 0,
-//             option: {
-//                 imageUrl: option.image_url
-//             }
-//         }
-//     })
-
-//     responses.forEach(r => {
-//         result[r.option_id].count++;
-//     });
-
-//     res.json({
-//         result,
-//         taskDetails
-//     })
-
-// })
-
-router.post("/task", authMiddleware, async (req, res) => {
-    //@ts-ignore
-    const userId = req.userId
-    // validate the inputs from the user;
-    const body = req.body;
-
-    const parseData = createTaskInput.safeParse(body);
-
-    const user = await prismaClient.user.findFirst({
+    const taskDetails = await prismaClient.task.findFirst({
         where: {
-            id: userId
+            user_id: Number(userId),
+            id: Number(taskId)
+        },
+        include: {
+            options: true
         }
     })
+
+    if (!taskDetails) {
+        return res.status(411).json({
+            message: "You dont have access to this task"
+        })
+    }
+
+    // Todo: Can u make this faster?
+    const responses = await prismaClient.submission.findMany({
+        where: {
+            task_id: Number(taskId)
+        },
+        include: {
+            option: true
+        }
+    });
+
+    const result: Record<string, {
+        count: number;
+        option: {
+            imageUrl: string
+        }
+    }> = {};
+
+    taskDetails.options.forEach(option => {
+        result[option.id] = {
+            count: 0,
+            option: {
+                imageUrl: option.image_url
+            }
+        }
+    })
+
+    responses.forEach(r => {
+        result[r.option_id].count++;
+    });
+
+    res.json({
+        result,
+        taskDetails
+    })
+
+})
+
+router.post("/task", authMiddleware, async (req, res) => {
+    // @ts-ignore
+    const userId = req.userId;
+    const body = req.body;
+
+    // Validate the inputs from the user;
+    const parseData = createTaskInput.safeParse(body);
+   // console.log(parseData)
 
     if (!parseData.success) {
         return res.status(411).json({
             message: "You've sent the wrong inputs"
-        })
+        });
     }
-
-    const transaction = await connection.getTransaction(parseData.data.signature, {
-        maxSupportedTransactionVersion: 1
-    });
-
-    console.log(transaction);
-
-    if ((transaction?.meta?.postBalances[1] ?? 0) - (transaction?.meta?.preBalances[1] ?? 0) !== 100000000) {
-        return res.status(411).json({
-            message: "Transaction signature/amount incorrect"
-        })
-    }
-
-    if (transaction?.transaction.message.getAccountKeys().get(1)?.toString() !== PARENT_WALLET_ADDRESS) {
-        return res.status(411).json({
-            message: "Transaction sent to wrong address"
-        })
-    }
-
-    if (transaction?.transaction.message.getAccountKeys().get(0)?.toString() !== user?.address) {
-        return res.status(411).json({
-            message: "Transaction sent to wrong address"
-        })
-    }
-    // was this money paid by this user address or a different address?
-
-    // parse the signature here to ensure the person has paid 0.1 SOL
-    // const transaction = Transaction.from(parseData.data.signature);
 
     let response = await prismaClient.$transaction(async tx => {
-
         const response = await tx.task.create({
             data: {
-                title: parseData.data.title ?? DEFAULT_TITLE,
-                amount: 0.1 * TOTAL_DECIMALS,
-                //TODO: Signature should be unique in the table else people can reuse a signature
+                title: parseData.data.title ?? "DEFAULT_TITLE",
+                amount: 0.1 * 100000000, // Adjust TOTAL_DECIMALS as needed
+                // TODO: Signature should be unique in the table else people can reuse a signature
                 signature: parseData.data.signature,
                 user_id: userId
             }
@@ -163,17 +129,15 @@ router.post("/task", authMiddleware, async (req, res) => {
                 image_url: x.imageUrl,
                 task_id: response.id
             }))
-        })
+        });
 
         return response;
-
-    })
+    });
 
     res.json({
         id: response.id
-    })
-
-})
+    });
+});
 
 router.get("/presignedUrl", authMiddleware, async (req, res) => {
     // @ts-ignore
@@ -190,22 +154,6 @@ router.get("/presignedUrl", authMiddleware, async (req, res) => {
         },
         Expires: 3600
     })
-
-    // const command = new PutObjectCommand({
-    //     Bucket: 'project2-thumbneilctr',
-    //     Key: `fiver/${userId}/${Math.random()}/image.jpg`,
-    //     ContentType: "img/jpg"
-    // })
-
-    // const preSignedUrl = await getSignedUrl(s3Client,command,{
-    //     expiresIn: 3600
-    // })
-
-    // res.json({
-    //     preSignedUrl
-    // })
-
-   // console.log({ url, fields })
 
     res.json({
         preSignedUrl: url,

@@ -20,7 +20,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const config_1 = require("../../config");
 const middleware_1 = require("../middleware");
 const s3_presigned_post_1 = require("@aws-sdk/s3-presigned-post");
-// import { createTaskInput } from "../types";
+const types_1 = require("../types");
 // import { Connection, PublicKey, Transaction } from "@solana/web3.js";
 // import nacl from "tweetnacl";
 // const connection = new Connection(process.env.RPC_URL ?? "");
@@ -44,139 +44,100 @@ const prismaClient = new client_1.PrismaClient();
 //       timeout: 10000, // default: 5000
 //     }
 // )
-// router.get("/task", authMiddleware, async (req, res) => {
-//     // @ts-ignore
-//     const taskId: string = req.query.taskId;
-//     // @ts-ignore
-//     const userId: string = req.userId;
-//     const taskDetails = await prismaClient.task.findFirst({
-//         where: {
-//             user_id: Number(userId),
-//             id: Number(taskId)
-//         },
-//         include: {
-//             options: true
-//         }
-//     })
-//     if (!taskDetails) {
-//         return res.status(411).json({
-//             message: "You dont have access to this task"
-//         })
-//     }
-//     // Todo: Can u make this faster?
-//     const responses = await prismaClient.submission.findMany({
-//         where: {
-//             task_id: Number(taskId)
-//         },
-//         include: {
-//             option: true
-//         }
-//     });
-//     const result: Record<string, {
-//         count: number;
-//         option: {
-//             imageUrl: string
-//         }
-//     }> = {};
-//     taskDetails.options.forEach(option => {
-//         result[option.id] = {
-//             count: 0,
-//             option: {
-//                 imageUrl: option.image_url
-//             }
-//         }
-//     })
-//     responses.forEach(r => {
-//         result[r.option_id].count++;
-//     });
-//     res.json({
-//         result,
-//         taskDetails
-//     })
-// })
-// router.post("/task", authMiddleware, async (req, res) => {
-//     //@ts-ignore
-//     const userId = req.userId
-//     // validate the inputs from the user;
-//     const body = req.body;
-//     const parseData = createTaskInput.safeParse(body);
-//     const user = await prismaClient.user.findFirst({
-//         where: {
-//             id: userId
-//         }
-//     })
-//     if (!parseData.success) {
-//         return res.status(411).json({
-//             message: "You've sent the wrong inputs"
-//         })
-//     }
-//     const transaction = await connection.getTransaction(parseData.data.signature, {
-//         maxSupportedTransactionVersion: 1
-//     });
-//     console.log(transaction);
-//     if ((transaction?.meta?.postBalances[1] ?? 0) - (transaction?.meta?.preBalances[1] ?? 0) !== 100000000) {
-//         return res.status(411).json({
-//             message: "Transaction signature/amount incorrect"
-//         })
-//     }
-//     if (transaction?.transaction.message.getAccountKeys().get(1)?.toString() !== PARENT_WALLET_ADDRESS) {
-//         return res.status(411).json({
-//             message: "Transaction sent to wrong address"
-//         })
-//     }
-//     if (transaction?.transaction.message.getAccountKeys().get(0)?.toString() !== user?.address) {
-//         return res.status(411).json({
-//             message: "Transaction sent to wrong address"
-//         })
-//     }
-//     // was this money paid by this user address or a different address?
-//     // parse the signature here to ensure the person has paid 0.1 SOL
-//     // const transaction = Transaction.from(parseData.data.signature);
-//     let response = await prismaClient.$transaction(async tx => {
-//         const response = await tx.task.create({
-//             data: {
-//                 title: parseData.data.title ?? DEFAULT_TITLE,
-//                 amount: 0.1 * TOTAL_DECIMALS,
-//                 //TODO: Signature should be unique in the table else people can reuse a signature
-//                 signature: parseData.data.signature,
-//                 user_id: userId
-//             }
-//         });
-//         await tx.option.createMany({
-//             data: parseData.data.options.map(x => ({
-//                 image_url: x.imageUrl,
-//                 task_id: response.id
-//             }))
-//         })
-//         return response;
-//     })
-//     res.json({
-//         id: response.id
-//     })
-// })
+router.get("/task", middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    // @ts-ignore
+    const taskId = req.query.taskId;
+    // @ts-ignore
+    const userId = req.userId;
+    const taskDetails = yield prismaClient.task.findFirst({
+        where: {
+            user_id: Number(userId),
+            id: Number(taskId)
+        },
+        include: {
+            options: true
+        }
+    });
+    if (!taskDetails) {
+        return res.status(411).json({
+            message: "You dont have access to this task"
+        });
+    }
+    // Todo: Can u make this faster?
+    const responses = yield prismaClient.submission.findMany({
+        where: {
+            task_id: Number(taskId)
+        },
+        include: {
+            option: true
+        }
+    });
+    const result = {};
+    taskDetails.options.forEach(option => {
+        result[option.id] = {
+            count: 0,
+            option: {
+                imageUrl: option.image_url
+            }
+        };
+    });
+    responses.forEach(r => {
+        result[r.option_id].count++;
+    });
+    res.json({
+        result,
+        taskDetails
+    });
+}));
+router.post("/task", middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    // @ts-ignore
+    const userId = req.userId;
+    const body = req.body;
+    // Validate the inputs from the user;
+    const parseData = types_1.createTaskInput.safeParse(body);
+    // console.log(parseData)
+    if (!parseData.success) {
+        return res.status(411).json({
+            message: "You've sent the wrong inputs"
+        });
+    }
+    let response = yield prismaClient.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+        var _c;
+        const response = yield tx.task.create({
+            data: {
+                title: (_c = parseData.data.title) !== null && _c !== void 0 ? _c : "DEFAULT_TITLE",
+                amount: 0.1 * 100000000, // Adjust TOTAL_DECIMALS as needed
+                // TODO: Signature should be unique in the table else people can reuse a signature
+                signature: parseData.data.signature,
+                user_id: userId
+            }
+        });
+        yield tx.option.createMany({
+            data: parseData.data.options.map(x => ({
+                image_url: x.imageUrl,
+                task_id: response.id
+            }))
+        });
+        return response;
+    }));
+    res.json({
+        id: response.id
+    });
+}));
 router.get("/presignedUrl", middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     // @ts-ignore
     const userId = req.userId;
     const { url, fields } = yield (0, s3_presigned_post_1.createPresignedPost)(s3Client, {
         Bucket: 'project2-thumbneilctr',
-        Key: `fiver/${userId}/${Math.random()}/image.jpg`,
+        Key: `fiver/${userId}/${Math.random()}/image.png`,
         Conditions: [
             ['content-length-range', 0, 5 * 1024 * 1024] // 5 MB max
         ],
+        Fields: {
+            'Content-Type': 'image/png'
+        },
         Expires: 3600
     });
-    // const command = new PutObjectCommand({
-    //     Bucket: 'project2-thumbneilctr',
-    //     Key: `fiver/${userId}/${Math.random()}/image.jpg`,
-    //     ContentType: "img/jpg"
-    // })
-    // const preSignedUrl = await getSignedUrl(s3Client,command,{
-    //     expiresIn: 3600
-    // })
-    // res.json({
-    //     preSignedUrl
-    // })
-    console.log({ url, fields });
     res.json({
         preSignedUrl: url,
         fields

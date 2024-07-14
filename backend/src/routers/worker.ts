@@ -1,14 +1,14 @@
 // // import nacl from "tweetnacl";
-// import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
-// import jwt from "jsonwebtoken";
-// // import { workerMiddleware } from "../middleware";
-// // import { TOTAL_DECIMALS, WORKER_JWT_SECRET } from "../config";
-// // import { getNextTask } from "../db";
-// // import { createSubmissionInput } from "../types";
-// // import { Connection, Keypair, PublicKey, SystemProgram, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
-// // import { privateKey } from "../privateKey";
-// // import { decode } from "bs58";
+import jwt from "jsonwebtoken";
+import { workerMiddleware } from "../middleware";
+import {  WORKER_JWT_SECRET } from "../../config";
+// import { getNextTask } from "../db";
+// import { createSubmissionInput } from "../types";
+// import { Connection, Keypair, PublicKey, SystemProgram, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
+// import { privateKey } from "../privateKey";
+// import { decode } from "bs58";
 
 // // const connection = new Connection(process.env.RPC_URL ?? "");
 
@@ -196,55 +196,55 @@ const router = Router();
 //     }
 // })
 
-// router.post("/signin", async(req, res) => {
-//     const { publicKey, signature } = req.body;
-//     const message = new TextEncoder().encode("Sign into mechanical turks as a worker");
+router.post("/signin", async(req, res) => {
+    const { publicKey, signature } = req.body;
+    const message = new TextEncoder().encode("Sign into mechanical turks as a worker");
 
-//     const result = nacl.sign.detached.verify(
-//         message,
-//         new Uint8Array(signature.data),
-//         new PublicKey(publicKey).toBytes(),
-//     );
+    // const result = nacl.sign.detached.verify(
+    //     message,
+    //     new Uint8Array(signature.data),
+    //     new PublicKey(publicKey).toBytes(),
+    // );
 
-//     if (!result) {
-//         return res.status(411).json({
-//             message: "Incorrect signature"
-//         })
-//     }
+    // if (!result) {
+    //     return res.status(411).json({
+    //         message: "Incorrect signature"
+    //     })
+    // }
 
-//     const existingUser = await prismaClient.worker.findFirst({
-//         where: {
-//             address: publicKey
-//         }
-//     })
+    const existingUser = await prismaClient.worker.findFirst({
+        where: {
+            address: publicKey
+        }
+    })
 
-//     if (existingUser) {
-//         const token = jwt.sign({
-//             userId: existingUser.id
-//         }, WORKER_JWT_SECRET)
+    if (existingUser) {
+        const token = jwt.sign({
+            userId: existingUser.id
+        }, WORKER_JWT_SECRET)
 
-//         res.json({
-//             token,
-//             amount: existingUser.pending_amount / TOTAL_DECIMALS
-//         })
-//     } else {
-//         const user = await prismaClient.worker.create({
-//             data: {
-//                 address: publicKey,
-//                 pending_amount: 0,
-//                 locked_amount: 0
-//             }
-//         });
+        res.json({
+            token,
+            amount: existingUser.pending_amount / TOTAL_DECIMALS
+        })
+    } else {
+        const user = await prismaClient.worker.create({
+            data: {
+                address: publicKey,
+                pending_amount: 0,
+                locked_amount: 0
+            }
+        });
 
-//         const token = jwt.sign({
-//             userId: user.id
-//         }, WORKER_JWT_SECRET)
+        const token = jwt.sign({
+            userId: user.id
+        }, WORKER_JWT_SECRET)
 
-//         res.json({
-//             token,
-//             amount: 0
-//         })
-//     }
-// });
+        res.json({
+            token,
+            amount: 0
+        })
+    }
+});
 
 export default router;
