@@ -49,24 +49,24 @@ router.post("/payout", workerMiddleware, async (req, res) => {
     );
 
 
-    const keypair = Keypair.fromSecretKey(decode(privateKey));
+    //const keypair = Keypair.fromSecretKey(decode(privateKey));
 
     // TODO: There's a double spending problem here
     // The user can request the withdrawal multiple times
     // Can u figure out a way to fix it?
-    let signature = "";
-    try {
-        signature = await sendAndConfirmTransaction(
-            connection,
-            transaction,
-            [keypair],
-        );
+    // let signature = "";
+    // try {
+    //     signature = await sendAndConfirmTransaction(
+    //         connection,
+    //         transaction,
+    //         [keypair],
+    //     );
     
-     } catch(e) {
-        return res.json({
-            message: "Transaction failed"
-        })
-     }
+    //  } catch(e) {
+    //     return res.json({
+    //         message: "Transaction failed"
+    //     })
+    //  }
     
     // We should add a lock here
     await prismaClient.$transaction(async tx => {
@@ -84,14 +84,14 @@ router.post("/payout", workerMiddleware, async (req, res) => {
             }
         })
 
-        await tx.payouts.create({
-            data: {
-                user_id: Number(userId),
-                amount: worker.pending_amount,
-                status: "Processing",
-                signature: signature
-            }
-        })
+        // await tx.payouts.create({
+        //     data: {
+        //         user_id: Number(userId),
+        //         amount: worker.pending_amount,
+        //         status: "Processing",
+        //         signature: signature
+        //     }
+        // })
     })
 
     res.json({
