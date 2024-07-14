@@ -16,24 +16,22 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const client_1 = require("@prisma/client");
 const express_1 = require("express");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const middleware_1 = require("../middleware");
 const config_1 = require("../../config");
-// import { getNextTask } from "../db";
-// import { createSubmissionInput } from "../types";
+const db_1 = require("../db");
+const types_1 = require("../types");
 // import { Connection, Keypair, PublicKey, SystemProgram, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
 // import { privateKey } from "../privateKey";
 // import { decode } from "bs58";
 // // const connection = new Connection(process.env.RPC_URL ?? "");
-// const TOTAL_SUBMISSIONS = 100;
+const TOTAL_SUBMISSIONS = 100;
 const prismaClient = new client_1.PrismaClient();
-// prismaClient.$transaction(
-//     async (prisma) => {
-//       // Code running in a transaction...
-//     },
-//     {
-//       maxWait: 5000, // default: 2000
-//       timeout: 10000, // default: 5000
-//     }
-// )
+prismaClient.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
+    // Code running in a transaction...
+}), {
+    maxWait: 5000, // default: 2000
+    timeout: 10000, // default: 5000
+});
 const router = (0, express_1.Router)();
 // router.post("/payout", workerMiddleware, async (req, res) => {
 //     // @ts-ignore
@@ -100,78 +98,80 @@ const router = (0, express_1.Router)();
 //         amount: worker.pending_amount
 //     })
 // })
-// router.get("/balance", workerMiddleware, async (req, res) => {
-//     // @ts-ignore
-//     const userId: string = req.userId;
-//     const worker = await prismaClient.worker.findFirst({
-//         where: {
-//             id: Number(userId)
-//         }
-//     })
-//     res.json({
-//         pendingAmount: worker?.pending_amount,
-//         lockedAmount: worker?.pending_amount,
-//     })
-// })
-// router.post("/submission", workerMiddleware, async (req, res) => {
-//     // @ts-ignore
-//     const userId = req.userId;
-//     const body = req.body;
-//     const parsedBody = createSubmissionInput.safeParse(body);
-//     if (parsedBody.success) {
-//         const task = await getNextTask(Number(userId));
-//         if (!task || task?.id !== Number(parsedBody.data.taskId)) {
-//             return res.status(411).json({
-//                 message: "Incorrect task id"
-//             })
-//         }
-//         const amount = (Number(task.amount) / TOTAL_SUBMISSIONS).toString();
-//         const submission = await prismaClient.$transaction(async tx => {
-//             const submission = await tx.submission.create({
-//                 data: {
-//                     option_id: Number(parsedBody.data.selection),
-//                     worker_id: userId,
-//                     task_id: Number(parsedBody.data.taskId),
-//                     amount: Number(amount)
-//                 }
-//             })
-//             await tx.worker.update({
-//                 where: {
-//                     id: userId,
-//                 },
-//                 data: {
-//                     pending_amount: {
-//                         increment: Number(amount)
-//                     }
-//                 }
-//             })
-//             return submission;
-//         })
-//         const nextTask = await getNextTask(Number(userId));
-//         res.json({
-//             nextTask,
-//             amount
-//         })
-//     } else {
-//         res.status(411).json({
-//             message: "Incorrect inputs"
-//         })
-//     }
-// })
-// router.get("/nextTask", workerMiddleware, async (req, res) => {
-//     // @ts-ignore
-//     const userId: string = req.userId;
-//     const task = await getNextTask(Number(userId));
-//     if (!task) {
-//         res.status(411).json({   
-//             message: "No more tasks left for you to review"
-//         })
-//     } else {
-//         res.json({   
-//             task
-//         })
-//     }
-// })
+router.get("/balance", middleware_1.workerMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    // @ts-ignore
+    const userId = req.userId;
+    const worker = yield prismaClient.worker.findFirst({
+        where: {
+            id: Number(userId)
+        }
+    });
+    res.json({
+        pendingAmount: worker === null || worker === void 0 ? void 0 : worker.pending_amount,
+        lockedAmount: worker === null || worker === void 0 ? void 0 : worker.pending_amount,
+    });
+}));
+router.post("/submission", middleware_1.workerMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    // @ts-ignore
+    const userId = req.userId;
+    const body = req.body;
+    const parsedBody = types_1.createSubmissionInput.safeParse(body);
+    if (parsedBody.success) {
+        const task = yield (0, db_1.getNextTask)(Number(userId));
+        if (!task || (task === null || task === void 0 ? void 0 : task.id) !== Number(parsedBody.data.taskId)) {
+            return res.status(411).json({
+                message: "Incorrect task id"
+            });
+        }
+        const amount = (Number(task.amount) / TOTAL_SUBMISSIONS).toString();
+        const submission = yield prismaClient.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+            const submission = yield tx.submission.create({
+                data: {
+                    option_id: Number(parsedBody.data.selection),
+                    worker_id: userId,
+                    task_id: Number(parsedBody.data.taskId),
+                    amount: Number(amount)
+                }
+            });
+            yield tx.worker.update({
+                where: {
+                    id: userId,
+                },
+                data: {
+                    pending_amount: {
+                        increment: Number(amount)
+                    }
+                }
+            });
+            return submission;
+        }));
+        const nextTask = yield (0, db_1.getNextTask)(Number(userId));
+        res.json({
+            nextTask,
+            amount
+        });
+    }
+    else {
+        res.status(411).json({
+            message: "Incorrect inputs"
+        });
+    }
+}));
+router.get("/nextTask", middleware_1.workerMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    // @ts-ignore
+    const userId = req.userId;
+    const task = yield (0, db_1.getNextTask)(Number(userId));
+    if (!task) {
+        res.status(411).json({
+            message: "No more tasks left for you to review"
+        });
+    }
+    else {
+        res.json({
+            task
+        });
+    }
+}));
 router.post("/signin", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const publicKey = "0x95fa625399153E4B28C43c6f0cdE76568A2bDDb9";
     // const { publicKey, signature } = req.body;
@@ -197,7 +197,7 @@ router.post("/signin", (req, res) => __awaiter(void 0, void 0, void 0, function*
         }, config_1.WORKER_JWT_SECRET);
         res.json({
             token,
-            amount: existingUser.pending_amount / 0.1 * 100000000,
+            amount: existingUser.pending_amount / 0.1 * config_1.TOTAL_DECIMALS,
             address: publicKey
         });
     }

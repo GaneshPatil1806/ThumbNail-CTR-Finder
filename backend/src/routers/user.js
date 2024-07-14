@@ -106,8 +106,7 @@ router.post("/task", middleware_1.authMiddleware, (req, res) => __awaiter(void 0
         const response = yield tx.task.create({
             data: {
                 title: (_c = parseData.data.title) !== null && _c !== void 0 ? _c : "DEFAULT_TITLE",
-                amount: 0.1 * 100000000, // Adjust TOTAL_DECIMALS as needed
-                // TODO: Signature should be unique in the table else people can reuse a signature
+                amount: 0.1 * config_1.TOTAL_DECIMALS,
                 signature: parseData.data.signature,
                 user_id: userId
             }

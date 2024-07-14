@@ -35,7 +35,7 @@ exports.authMiddleware = authMiddleware;
 function workerMiddleware(req, res, next) {
     var _a;
     const authHeader = (_a = req.headers["authorization"]) !== null && _a !== void 0 ? _a : "";
-    console.log(authHeader);
+    //console.log(authHeader);
     try {
         const decoded = jsonwebtoken_1.default.verify(authHeader, config_1.WORKER_JWT_SECRET);
         // @ts-ignore

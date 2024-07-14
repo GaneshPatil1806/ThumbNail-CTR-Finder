@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
 import jwt from "jsonwebtoken";
-import { JWT_SECRET } from "../../config";
+import { JWT_SECRET,TOTAL_DECIMALS} from "../../config";
 import { authMiddleware } from "../middleware";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
@@ -117,8 +117,7 @@ router.post("/task", authMiddleware, async (req, res) => {
         const response = await tx.task.create({
             data: {
                 title: parseData.data.title ?? "DEFAULT_TITLE",
-                amount: 0.1 * 100000000, // Adjust TOTAL_DECIMALS as needed
-                // TODO: Signature should be unique in the table else people can reuse a signature
+                amount: 0.1 * TOTAL_DECIMALS, 
                 signature: parseData.data.signature,
                 user_id: userId
             }
