@@ -4,7 +4,7 @@ import { Router } from "express";
 import jwt from "jsonwebtoken";
 import { workerMiddleware } from "../middleware";
 import {  WORKER_JWT_SECRET } from "../../config";
-// import { getNextTask } from "../db";
+import { getNextTask } from "../db";
 // import { createSubmissionInput } from "../types";
 // import { Connection, Keypair, PublicKey, SystemProgram, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
 // import { privateKey } from "../privateKey";
@@ -179,26 +179,29 @@ const router = Router();
 
 // })
 
-// router.get("/nextTask", workerMiddleware, async (req, res) => {
-//     // @ts-ignore
-//     const userId: string = req.userId;
+router.get("/nextTask", workerMiddleware, async (req, res) => {
+    // @ts-ignore
+    const userId: string = req.userId;
 
-//     const task = await getNextTask(Number(userId));
+    const task = await getNextTask(Number(userId));
 
-//     if (!task) {
-//         res.status(411).json({   
-//             message: "No more tasks left for you to review"
-//         })
-//     } else {
-//         res.json({   
-//             task
-//         })
-//     }
-// })
+    if (!task) {
+        res.status(411).json({   
+            message: "No more tasks left for you to review"
+        })
+    } else {
+        res.json({   
+            task
+        })
+    }
+})
 
 router.post("/signin", async(req, res) => {
-    const { publicKey, signature } = req.body;
-    const message = new TextEncoder().encode("Sign into mechanical turks as a worker");
+
+    const publicKey = "0x95fa625399153E4B28C43c6f0cdE76568A2bDDb9";
+
+    // const { publicKey, signature } = req.body;
+    // const message = new TextEncoder().encode("Sign into mechanical turks as a worker");
 
     // const result = nacl.sign.detached.verify(
     //     message,
@@ -226,6 +229,7 @@ router.post("/signin", async(req, res) => {
         res.json({
             token,
             amount: existingUser.pending_amount / 0.1 * 100000000,
+            address:publicKey
         })
 
     } else {

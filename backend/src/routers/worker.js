@@ -1,19 +1,30 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 // // import nacl from "tweetnacl";
-// import { PrismaClient } from "@prisma/client";
+const client_1 = require("@prisma/client");
 const express_1 = require("express");
-// import jwt from "jsonwebtoken";
-// // import { workerMiddleware } from "../middleware";
-// // import { TOTAL_DECIMALS, WORKER_JWT_SECRET } from "../config";
-// // import { getNextTask } from "../db";
-// // import { createSubmissionInput } from "../types";
-// // import { Connection, Keypair, PublicKey, SystemProgram, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
-// // import { privateKey } from "../privateKey";
-// // import { decode } from "bs58";
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const config_1 = require("../../config");
+// import { getNextTask } from "../db";
+// import { createSubmissionInput } from "../types";
+// import { Connection, Keypair, PublicKey, SystemProgram, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
+// import { privateKey } from "../privateKey";
+// import { decode } from "bs58";
 // // const connection = new Connection(process.env.RPC_URL ?? "");
 // const TOTAL_SUBMISSIONS = 100;
-// const prismaClient = new PrismaClient();
+const prismaClient = new client_1.PrismaClient();
 // prismaClient.$transaction(
 //     async (prisma) => {
 //       // Code running in a transaction...
@@ -161,47 +172,50 @@ const router = (0, express_1.Router)();
 //         })
 //     }
 // })
-// router.post("/signin", async(req, res) => {
-//     const { publicKey, signature } = req.body;
-//     const message = new TextEncoder().encode("Sign into mechanical turks as a worker");
-//     const result = nacl.sign.detached.verify(
-//         message,
-//         new Uint8Array(signature.data),
-//         new PublicKey(publicKey).toBytes(),
-//     );
-//     if (!result) {
-//         return res.status(411).json({
-//             message: "Incorrect signature"
-//         })
-//     }
-//     const existingUser = await prismaClient.worker.findFirst({
-//         where: {
-//             address: publicKey
-//         }
-//     })
-//     if (existingUser) {
-//         const token = jwt.sign({
-//             userId: existingUser.id
-//         }, WORKER_JWT_SECRET)
-//         res.json({
-//             token,
-//             amount: existingUser.pending_amount / TOTAL_DECIMALS
-//         })
-//     } else {
-//         const user = await prismaClient.worker.create({
-//             data: {
-//                 address: publicKey,
-//                 pending_amount: 0,
-//                 locked_amount: 0
-//             }
-//         });
-//         const token = jwt.sign({
-//             userId: user.id
-//         }, WORKER_JWT_SECRET)
-//         res.json({
-//             token,
-//             amount: 0
-//         })
-//     }
-// });
+router.post("/signin", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const publicKey = "0x95fa625399153E4B28C43c6f0cdE76568A2bDDb9";
+    // const { publicKey, signature } = req.body;
+    // const message = new TextEncoder().encode("Sign into mechanical turks as a worker");
+    // const result = nacl.sign.detached.verify(
+    //     message,
+    //     new Uint8Array(signature.data),
+    //     new PublicKey(publicKey).toBytes(),
+    // );
+    // if (!result) {
+    //     return res.status(411).json({
+    //         message: "Incorrect signature"
+    //     })
+    // }
+    const existingUser = yield prismaClient.worker.findFirst({
+        where: {
+            address: publicKey
+        }
+    });
+    if (existingUser) {
+        const token = jsonwebtoken_1.default.sign({
+            userId: existingUser.id
+        }, config_1.WORKER_JWT_SECRET);
+        res.json({
+            token,
+            amount: existingUser.pending_amount / 0.1 * 100000000,
+            address: publicKey
+        });
+    }
+    else {
+        const user = yield prismaClient.worker.create({
+            data: {
+                address: publicKey,
+                pending_amount: 0,
+                locked_amount: 0
+            }
+        });
+        const token = jsonwebtoken_1.default.sign({
+            userId: user.id
+        }, config_1.WORKER_JWT_SECRET);
+        res.json({
+            token,
+            amount: 0
+        });
+    }
+}));
 exports.default = router;
