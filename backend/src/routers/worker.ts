@@ -7,9 +7,9 @@ import {  TOTAL_DECIMALS, WORKER_JWT_SECRET } from "../../config";
 import { getNextTask } from "../db";
 import { createSubmissionInput } from "../types";
 import { any } from "zod";
-// import { Connection, Keypair, PublicKey, SystemProgram, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
-// import { privateKey } from "../privateKey";
-// import { decode } from "bs58";
+import { Connection, Keypair, PublicKey, SystemProgram, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
+import { privateKey } from "../privateKey";
+import decode from "bs58";
 
 // // const connection = new Connection(process.env.RPC_URL ?? "");
 
@@ -18,94 +18,89 @@ const prismaClient = new PrismaClient();
 
 prismaClient.$transaction(
     async (prisma) => {
-      // Code running in a transaction...
     },
     {
-      maxWait: 5000, // default: 2000
-      timeout: 10000, // default: 5000
+      maxWait: 5000, 
+      timeout: 10000, 
     }
 )
 
 const router = Router();
 
-// router.post("/payout", workerMiddleware, async (req, res) => {
-//     // @ts-ignore
-//     const userId: string = req.userId;
-//     const worker = await prismaClient.worker.findFirst({
-//         where: { id: Number(userId) }
-//     })
+router.post("/payout", workerMiddleware, async (req, res) => {
+    // @ts-ignore
+    const userId: string = req.userId;
+    const worker = await prismaClient.worker.findFirst({
+        where: { id: Number(userId) }
+    })
 
-//     if (!worker) {
-//         return res.status(403).json({
-//             message: "User not found"
-//         })
-//     }
+    if (!worker) {
+        return res.status(403).json({
+            message: "User not found"
+        })
+    }
 
-//     const transaction = new Transaction().add(
-//         SystemProgram.transfer({
-//             fromPubkey: new PublicKey("2KeovpYvrgpziaDsq8nbNMP4mc48VNBVXb5arbqrg9Cq"),
-//             toPubkey: new PublicKey(worker.address),
-//             lamports: 1000_000_000 * worker.pending_amount / TOTAL_DECIMALS,
-//         })
-//     );
+    const transaction = new Transaction().add(
+        SystemProgram.transfer({
+            fromPubkey: new PublicKey("2KeovpYvrgpziaDsq8nbNMP4mc48VNBVXb5arbqr"),
+            toPubkey: new PublicKey(worker.address),
+            lamports: (1000_000 * worker.pending_amount)/ TOTAL_DECIMALS,
+        })
+    );
 
 
-//     console.log(worker.address);
+    const keypair = Keypair.fromSecretKey(decode(privateKey));
 
-//     const keypair = Keypair.fromSecretKey(decode(privateKey));
-
-//     // TODO: There's a double spending problem here
-//     // The user can request the withdrawal multiple times
-//     // Can u figure out a way to fix it?
-//     let signature = "";
-//     try {
-//         signature = await sendAndConfirmTransaction(
-//             connection,
-//             transaction,
-//             [keypair],
-//         );
+    // TODO: There's a double spending problem here
+    // The user can request the withdrawal multiple times
+    // Can u figure out a way to fix it?
+    let signature = "";
+    try {
+        signature = await sendAndConfirmTransaction(
+            connection,
+            transaction,
+            [keypair],
+        );
     
-//      } catch(e) {
-//         return res.json({
-//             message: "Transaction failed"
-//         })
-//      }
+     } catch(e) {
+        return res.json({
+            message: "Transaction failed"
+        })
+     }
     
-//     console.log(signature)
+    // We should add a lock here
+    await prismaClient.$transaction(async tx => {
+        await tx.worker.update({
+            where: {
+                id: Number(userId)
+            },
+            data: {
+                pending_amount: {
+                    decrement: worker.pending_amount
+                },
+                locked_amount: {
+                    increment: worker.pending_amount
+                }
+            }
+        })
 
-//     // We should add a lock here
-//     await prismaClient.$transaction(async tx => {
-//         await tx.worker.update({
-//             where: {
-//                 id: Number(userId)
-//             },
-//             data: {
-//                 pending_amount: {
-//                     decrement: worker.pending_amount
-//                 },
-//                 locked_amount: {
-//                     increment: worker.pending_amount
-//                 }
-//             }
-//         })
+        await tx.payouts.create({
+            data: {
+                user_id: Number(userId),
+                amount: worker.pending_amount,
+                status: "Processing",
+                signature: signature
+            }
+        })
+    })
 
-//         await tx.payouts.create({
-//             data: {
-//                 user_id: Number(userId),
-//                 amount: worker.pending_amount,
-//                 status: "Processing",
-//                 signature: signature
-//             }
-//         })
-//     })
-
-//     res.json({
-//         message: "Processing payout",
-//         amount: worker.pending_amount
-//     })
+    res.json({
+        message: "Processing payout",
+        amount: worker.pending_amount
+    })
 
 
-// })
+})
 
 router.get("/balance", workerMiddleware, async (req, res) => {
     // @ts-ignore
