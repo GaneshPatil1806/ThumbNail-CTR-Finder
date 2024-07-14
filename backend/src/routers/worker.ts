@@ -13,7 +13,7 @@ import {  WORKER_JWT_SECRET } from "../../config";
 // // const connection = new Connection(process.env.RPC_URL ?? "");
 
 // const TOTAL_SUBMISSIONS = 100;
-// const prismaClient = new PrismaClient();
+const prismaClient = new PrismaClient();
 
 // prismaClient.$transaction(
 //     async (prisma) => {
@@ -225,8 +225,9 @@ router.post("/signin", async(req, res) => {
 
         res.json({
             token,
-            amount: existingUser.pending_amount / TOTAL_DECIMALS
+            amount: existingUser.pending_amount / 0.1 * 100000000,
         })
+
     } else {
         const user = await prismaClient.worker.create({
             data: {
