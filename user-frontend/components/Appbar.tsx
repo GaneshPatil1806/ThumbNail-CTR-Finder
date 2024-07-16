@@ -6,10 +6,13 @@ import {
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useEffect } from 'react';
 import axios from 'axios';
-import { BACKEND_URL } from '@/utils';
+const BACKEND_URL = "http://localhost:4000"
 
 export const Appbar = () => {
     const { publicKey , signMessage} = useWallet();
+
+   // console.log("backu" ,BACKEND_URL)
+   //console.log("public key",publicKey);
 
     async function signAndSend() {
         if (!publicKey) {

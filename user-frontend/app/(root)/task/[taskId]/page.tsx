@@ -1,11 +1,10 @@
 "use client"
 import { Appbar } from '@/components/Appbar';
-import { BACKEND_URL } from '@/utils';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 
 async function getTaskDetails(taskId: string) {
-    const response = await axios.get(`${BACKEND_URL}/v1/user/task?taskId=${taskId}`, {
+    const response = await axios.get(`${process.env.BACKEND_URL}/v1/user/task?taskId=${taskId}`, {
         headers: {
             "Authorization": localStorage.getItem("token")
         }

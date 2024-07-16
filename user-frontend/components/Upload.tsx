@@ -1,11 +1,11 @@
 "use client";
 import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import { UploadImage } from "@/components/UploadImage";
-import { BACKEND_URL } from "@/utils";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+const BACKEND_URL = "http://localhost:4000"
 
 export const Upload = () => {
     const [images, setImages] = useState<string[]>([]);
@@ -27,6 +27,8 @@ export const Upload = () => {
                 "Authorization": localStorage.getItem("token")
             }
         })
+
+        console.log("resp ",response)
 
         router.push(`/task/${response.data.id}`)
     }

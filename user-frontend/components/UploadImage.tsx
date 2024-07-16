@@ -1,6 +1,9 @@
 "use client"
 import axios from "axios";
+import { headers } from "next/headers";
 import { useState } from "react"
+const BACKEND_URL = "http://localhost:4000";
+const CLOUDFRONT_URL = "https://d3ppmigsqvkiof.cloudfront.net";
 
 export function UploadImage({ onImageAdded, image }: {
     onImageAdded: (image: string) => void;
@@ -12,26 +15,36 @@ export function UploadImage({ onImageAdded, image }: {
         setUploading(true);
         try {
             const file = e.target.files[0];
-            const response = await axios.get(`${process.env.BACKEND_URL}/v1/user/presignedUrl`, {
+            const response = await axios.get(`${BACKEND_URL}/v1/user/presignedUrl`, {
                 headers: {
                     "Authorization": localStorage.getItem("token")
                 }
             });
             const presignedUrl = response.data.preSignedUrl;
-            const formData = new FormData();
-            formData.set("bucket", response.data.fields["bucket"])
-            formData.set("X-Amz-Algorithm", response.data.fields["X-Amz-Algorithm"]);
-            formData.set("X-Amz-Credential", response.data.fields["X-Amz-Credential"]);
-            formData.set("X-Amz-Algorithm", response.data.fields["X-Amz-Algorithm"]);
-            formData.set("X-Amz-Date", response.data.fields["X-Amz-Date"]);
-            formData.set("key", response.data.fields["key"]);
-            formData.set("Policy", response.data.fields["Policy"]);
-            formData.set("X-Amz-Signature", response.data.fields["X-Amz-Signature"]);
-            formData.set("X-Amz-Algorithm", response.data.fields["X-Amz-Algorithm"]);
-            formData.append("file", file);
-            const awsResponse = await axios.post(presignedUrl, formData);
 
-            onImageAdded(`${process.env.CLOUDFRONT_URL}/${response.data.fields["key"]}`);
+            console.log("resp ",response);
+            
+            const formData = {
+                "bucket":response.data.fields["bucket"],
+                "X-Amz-Algorithm":response.data.fields["X-Amz-Algorithm"],
+                "X-Amz-Credential":response.data.fields["X-Amz-Credential"],
+                "X-Amz-Date":response.data.fields["X-Amz-Date"],
+                "key":response.data.fields["key"],
+                "Policy":response.data.fields["Policy"],
+                "X-Amz-Signature":response.data.fields["X-Amz-Signature"],
+                "file":file
+            }
+            
+            //'console.log("formData",formData);
+            
+            const awsResponse = await fetch(presignedUrl,{
+                method: 'POST',
+                body: formData
+            });
+
+            console.log(awsResponse);
+
+            onImageAdded(`${CLOUDFRONT_URL}/:response.data.fields["key"]}`);
         } catch(e) {
             console.log(e)
         }

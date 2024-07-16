@@ -20,7 +20,7 @@ const s3Client = new S3Client({
         accessKeyId: process.env.ACCESS_KEY_ID ?? "",
         secretAccessKey: process.env.ACCESS_SECRET ?? "",
     },
-    region: "us-east-1"
+    region: "eu-north-1",
 })
 
 const router = Router();
@@ -179,12 +179,16 @@ router.get("/presignedUrl", authMiddleware, async (req, res) => {
     const userId = req.userId;
 
     const { url, fields } = await createPresignedPost(s3Client, {
-        Bucket: 'hkirat-cms',
+        Bucket: 'project2-thumbneilctr',
         Key: `fiver/${userId}/${Math.random()}/image.jpg`,
         Conditions: [
-          ['content-length-range', 0, 5 * 1024 * 1024] // 5 MB max
-        ],
-        Expires: 3600
+            ['content-length-range', 0, 5 * 1024 * 1024] // 5 MB max
+          ],
+          Fields: {
+            success_action_status: '201',
+            'Content-Type': 'image/png'
+          },
+        Expires: 3600,
     })
 
     res.json({
@@ -198,6 +202,7 @@ router.post("/signin", async(req, res) => {
     const { publicKey, signature } = req.body;
     const message = new TextEncoder().encode("Sign into mechanical turks");
 
+    console.log("sign in ",publicKey);
     const result = nacl.sign.detached.verify(
         message,
         new Uint8Array(signature.data),
