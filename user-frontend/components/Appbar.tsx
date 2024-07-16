@@ -10,10 +10,7 @@ const BACKEND_URL = "http://localhost:4000"
 
 export const Appbar = () => {
     const { publicKey , signMessage} = useWallet();
-
-   // console.log("backu" ,BACKEND_URL)
-   //console.log("public key",publicKey);
-
+    
     async function signAndSend() {
         if (!publicKey) {
             return;
