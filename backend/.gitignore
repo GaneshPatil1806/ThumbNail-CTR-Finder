@@ -1,4 +1,10 @@
 node_modules
+<<<<<<< HEAD
 dist
 # Keep environment variables out of version control
 .env
+=======
+# Keep environment variables out of version control
+.env
+backend/src/privateKey.ts
+>>>>>>> origin/main

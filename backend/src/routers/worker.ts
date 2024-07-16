@@ -1,8 +1,13 @@
+<<<<<<< HEAD
 import nacl from "tweetnacl";
+=======
+// // import nacl from "tweetnacl";
+>>>>>>> origin/main
 import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
 import jwt from "jsonwebtoken";
 import { workerMiddleware } from "../middleware";
+<<<<<<< HEAD
 import { TOTAL_DECIMALS, WORKER_JWT_SECRET } from "../config";
 import { getNextTask } from "../db";
 import { createSubmissionInput } from "../types";
@@ -13,15 +18,35 @@ const connection = new Connection(process.env.RPC_URL ?? "");
 
 const TOTAL_SUBMISSIONS = 100;
 
+=======
+import {  TOTAL_DECIMALS, WORKER_JWT_SECRET } from "../../config";
+import { getNextTask } from "../db";
+import { createSubmissionInput } from "../types";
+import { any } from "zod";
+import { Connection, Keypair, PublicKey, SystemProgram, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
+import { privateKey } from "../privateKey";
+import decode from "bs58";
+
+// // const connection = new Connection(process.env.RPC_URL ?? "");
+
+const TOTAL_SUBMISSIONS = 100;
+>>>>>>> origin/main
 const prismaClient = new PrismaClient();
 
 prismaClient.$transaction(
     async (prisma) => {
+<<<<<<< HEAD
       // Code running in a transaction...
     },
     {
       maxWait: 5000, // default: 2000
       timeout: 10000, // default: 5000
+=======
+    },
+    {
+      maxWait: 5000, 
+      timeout: 10000, 
+>>>>>>> origin/main
     }
 )
 
@@ -42,20 +67,31 @@ router.post("/payout", workerMiddleware, async (req, res) => {
 
     const transaction = new Transaction().add(
         SystemProgram.transfer({
+<<<<<<< HEAD
             fromPubkey: new PublicKey("2KeovpYvrgpziaDsq8nbNMP4mc48VNBVXb5arbqrg9Cq"),
             toPubkey: new PublicKey(worker.address),
             lamports: 1000_000_000 * worker.pending_amount / TOTAL_DECIMALS,
+=======
+            fromPubkey: new PublicKey("2KeovpYvrgpziaDsq8nbNMP4mc48VNBVXb5arbqr"),
+            toPubkey: new PublicKey(worker.address),
+            lamports: (1000_000 * worker.pending_amount)/ TOTAL_DECIMALS,
+>>>>>>> origin/main
         })
     );
 
 
+<<<<<<< HEAD
     console.log(worker.address);
 
     const keypair = Keypair.fromSecretKey(decode(privateKey));
+=======
+    //const keypair = Keypair.fromSecretKey(decode(privateKey));
+>>>>>>> origin/main
 
     // TODO: There's a double spending problem here
     // The user can request the withdrawal multiple times
     // Can u figure out a way to fix it?
+<<<<<<< HEAD
     let signature = "";
     try {
         signature = await sendAndConfirmTransaction(
@@ -72,6 +108,22 @@ router.post("/payout", workerMiddleware, async (req, res) => {
     
     console.log(signature)
 
+=======
+    // let signature = "";
+    // try {
+    //     signature = await sendAndConfirmTransaction(
+    //         connection,
+    //         transaction,
+    //         [keypair],
+    //     );
+    
+    //  } catch(e) {
+    //     return res.json({
+    //         message: "Transaction failed"
+    //     })
+    //  }
+    
+>>>>>>> origin/main
     // We should add a lock here
     await prismaClient.$transaction(async tx => {
         await tx.worker.update({
@@ -88,6 +140,7 @@ router.post("/payout", workerMiddleware, async (req, res) => {
             }
         })
 
+<<<<<<< HEAD
         await tx.payouts.create({
             data: {
                 user_id: Number(userId),
@@ -96,6 +149,16 @@ router.post("/payout", workerMiddleware, async (req, res) => {
                 signature: signature
             }
         })
+=======
+        // await tx.payouts.create({
+        //     data: {
+        //         user_id: Number(userId),
+        //         amount: worker.pending_amount,
+        //         status: "Processing",
+        //         signature: signature
+        //     }
+        // })
+>>>>>>> origin/main
     })
 
     res.json({
@@ -122,7 +185,10 @@ router.get("/balance", workerMiddleware, async (req, res) => {
     })
 })
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
 router.post("/submission", workerMiddleware, async (req, res) => {
     // @ts-ignore
     const userId = req.userId;
@@ -197,6 +263,7 @@ router.get("/nextTask", workerMiddleware, async (req, res) => {
 })
 
 router.post("/signin", async(req, res) => {
+<<<<<<< HEAD
     const { publicKey, signature } = req.body;
     const message = new TextEncoder().encode("Sign into mechanical turks as a worker");
 
@@ -211,6 +278,25 @@ router.post("/signin", async(req, res) => {
             message: "Incorrect signature"
         })
     }
+=======
+
+    const publicKey = "0x95fa625399153E4B28C43c6f0cdE76568A2bDDb9";
+
+    // const { publicKey, signature } = req.body;
+    // const message = new TextEncoder().encode("Sign into mechanical turks as a worker");
+
+    // const result = nacl.sign.detached.verify(
+    //     message,
+    //     new Uint8Array(signature.data),
+    //     new PublicKey(publicKey).toBytes(),
+    // );
+
+    // if (!result) {
+    //     return res.status(411).json({
+    //         message: "Incorrect signature"
+    //     })
+    // }
+>>>>>>> origin/main
 
     const existingUser = await prismaClient.worker.findFirst({
         where: {
@@ -225,8 +311,15 @@ router.post("/signin", async(req, res) => {
 
         res.json({
             token,
+<<<<<<< HEAD
             amount: existingUser.pending_amount / TOTAL_DECIMALS
         })
+=======
+            amount: existingUser.pending_amount / 0.1*TOTAL_DECIMALS,
+            address:publicKey
+        });
+
+>>>>>>> origin/main
     } else {
         const user = await prismaClient.worker.create({
             data: {
