@@ -8,6 +8,7 @@ import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 const BACKEND_URL = "http://localhost:4000"
 
 export const Upload = () => {
+
     const [images, setImages] = useState<string[]>([]);
     const [title, setTitle] = useState("");
     const [txSignature, setTxSignature] = useState("");
@@ -16,6 +17,7 @@ export const Upload = () => {
     const router = useRouter();
 
     async function onSubmit() {
+        
         const response = await axios.post(`${BACKEND_URL}/v1/user/task`, {
             options: images.map(image => ({
                 imageUrl: image,
@@ -49,7 +51,6 @@ export const Upload = () => {
         } = await connection.getLatestBlockhashAndContext();
 
         const signature = await sendTransaction(transaction, connection, { minContextSlot });
-
         await connection.confirmTransaction({ blockhash, lastValidBlockHeight, signature });
         setTxSignature(signature);
     }

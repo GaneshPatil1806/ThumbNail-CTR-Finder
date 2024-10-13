@@ -21,9 +21,6 @@ export function UploadImage({ onImageAdded, image }: {
                 }
             });
             const presignedUrl = response.data.preSignedUrl;
-
-            console.log("resp ",response);
-            
             const formData = {
                 "bucket":response.data.fields["bucket"],
                 "X-Amz-Algorithm":response.data.fields["X-Amz-Algorithm"],

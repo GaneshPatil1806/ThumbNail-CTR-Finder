@@ -1,7 +1,7 @@
 import nacl from "tweetnacl";
 import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
-import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client } from '@aws-sdk/client-s3'
 import jwt from "jsonwebtoken";
 import { JWT_SECRET, TOTAL_DECIMALS } from "../config";
 import { authMiddleware } from "../middleware";
@@ -11,7 +11,7 @@ import { Connection, PublicKey, Transaction } from "@solana/web3.js";
 
 const connection = new Connection(process.env.RPC_URL ?? "");
 
-const PARENT_WALLET_ADDRESS = "2KeovpYvrgpziaDsq8nbNMP4mc48VNBVXb5arbqrg9Cq";
+const PARENT_WALLET_ADDRESS = "";
     
 const DEFAULT_TITLE = "Select the most clickable thumbnail";
 
@@ -38,69 +38,10 @@ prismaClient.$transaction(
     }
 )
 
-router.get("/task", authMiddleware, async (req, res) => {
-    // @ts-ignore
-    const taskId: string = req.query.taskId;
-    // @ts-ignore
-    const userId: string = req.userId;
-
-    const taskDetails = await prismaClient.task.findFirst({
-        where: {
-            user_id: Number(userId),
-            id: Number(taskId)
-        },
-        include: {
-            options: true
-        }
-    })
-
-    if (!taskDetails) {
-        return res.status(411).json({
-            message: "You dont have access to this task"
-        })
-    }
-
-    // Todo: Can u make this faster?
-    const responses = await prismaClient.submission.findMany({
-        where: {
-            task_id: Number(taskId)
-        },
-        include: {
-            option: true
-        }
-    });
-
-    const result: Record<string, {
-        count: number;
-        option: {
-            imageUrl: string
-        }
-    }> = {};
-
-    taskDetails.options.forEach(option => {
-        result[option.id] = {
-            count: 0,
-            option: {
-                imageUrl: option.image_url
-            }
-        }
-    })
-
-    responses.forEach(r => {
-        result[r.option_id].count++;
-    });
-
-    res.json({
-        result,
-        taskDetails
-    })
-
-})
 
 router.post("/task", authMiddleware, async (req, res) => {
     //@ts-ignore
     const userId = req.userId
-    // validate the inputs from the user;
     const body = req.body;
 
     const parseData = createTaskInput.safeParse(body);
@@ -165,7 +106,6 @@ router.post("/task", authMiddleware, async (req, res) => {
         })
 
         return response;
-
     })
 
     res.json({
@@ -173,6 +113,66 @@ router.post("/task", authMiddleware, async (req, res) => {
     })
 
 })
+
+router.get("/task", authMiddleware, async (req, res) => {
+    // @ts-ignore
+    const taskId: string = req.query.taskId;
+    // @ts-ignore
+    const userId: string = req.userId;
+
+    const taskDetails = await prismaClient.task.findFirst({
+        where: {
+            user_id: Number(userId),
+            id: Number(taskId)
+        },
+        include: {
+            options: true
+        }
+    })
+
+    if (!taskDetails) {
+        return res.status(411).json({
+            message: "You dont have access to this task"
+        })
+    }
+
+    // Todo: Can u make this faster?
+    const responses = await prismaClient.submission.findMany({
+        where: {
+            task_id: Number(taskId)
+        },
+        include: {
+            option: true
+        }
+    });
+
+    const result: Record<string, {
+        count: number;
+        option: {
+            imageUrl: string
+        }
+    }> = {};
+
+    taskDetails.options.forEach(option => {
+        result[option.id] = {
+            count: 0,
+            option: {
+                imageUrl: option.image_url
+            }
+        }
+    })
+
+    responses.forEach(r => {
+        result[r.option_id].count++;
+    });
+
+    res.json({
+        result,
+        taskDetails
+    })
+
+})
+
 
 router.get("/presignedUrl", authMiddleware, async (req, res) => {
     // @ts-ignore
@@ -248,3 +248,5 @@ router.post("/signin", async(req, res) => {
 });
 
 export default router;
+
+ 

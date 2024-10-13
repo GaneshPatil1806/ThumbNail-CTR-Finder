@@ -1,0 +1,29 @@
+how the backend know if the user have this wallet - signing a message
+
+so why auth is needed 
+each time user sends username or password to the backend - its ugly
+
+the number of requests to the database increases 
+so to avoid that we use jwt, coockies so that we can maintain a session
+and no need to hit the database again and again 
+
+how cookies and jwt works?
+
+signing a message: 
+address and the signed_message is sent to the backend 
+
+you also need to make sure in the submission that every user just makes one submission
+
+
+1) 8 am  contest if missed 10 am contest 10-11.30
+
+2) project upto 1 pm 
+
+3) resume upto 5-6 pm ( just get the things done at first) as each and every possible question
+
+4) java - 3 onwards
+
+5) dsa vro -  internal working + ( open new acc, arsh goyal, strings, LL, array, graph, dp, trees etc)
+
+9 days - 9 things get clear - 1.prisma, 2.docker, 3.nextjs, 4.java, 5.css, 6.designing and quering from the databases, 7.using aggregate functions,
+			      8.pagination 9.infinite scrolling	
