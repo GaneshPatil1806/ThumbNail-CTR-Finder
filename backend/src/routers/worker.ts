@@ -60,8 +60,6 @@ router.post("/payout", workerMiddleware, async (req, res) => {
         })
     );
 
-    console.log(worker.address);
-
     const keypair = Keypair.fromSecretKey(decode(privateKey));
 
     let signature = "";
@@ -98,7 +96,7 @@ router.post("/payout", workerMiddleware, async (req, res) => {
                 locked_amount: {
                     increment: worker.pending_amount
                 },
-                locked: false // Unlock the worker after successful payout
+                locked: false
             }
         });
 

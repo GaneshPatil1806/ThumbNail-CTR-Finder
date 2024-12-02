@@ -21,7 +21,7 @@ export const Appbar = () => {
         console.log(publicKey)
         const response = await axios.post(`${BACKEND_URL}/v1/user/signin`, {
             signature,
-            publicKey: publicKey?.toString();
+            publicKey: publicKey?.toString()
         });
 
         localStorage.setItem("token", response.data.token);
